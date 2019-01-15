@@ -80,14 +80,16 @@ export default class StateViewer extends React.PureComponent {
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (this.props !== prevProps)
             this.setState({ appState: this.getAppState(this.props) });
-        if (this.state.indentation !== prevState.indentation) {
+
+        if (this.state.indentation !== prevState.indentation)
             localStorage.setItem('stateViewer.indentation', this.state.indentation);
-            this.changeViewedState();
-        }
+
         if (this.state.fontSize !== prevState.fontSize)
             localStorage.setItem('stateViewer.fontSize', this.state.fontSize);
-        if (this.state.fields !== prevState.fields || this.state.appState !== prevState.appState)
+
+        if (this.state.fields !== prevState.fields)
             this.changeViewedState();
+
         if (this.state.viewedState !== prevState.viewedState)
             this.changeStateJson();
     };
@@ -103,20 +105,12 @@ export default class StateViewer extends React.PureComponent {
                 <ArrowIcon
                     name='angle double left'
                     onClick={() => this.setState({visible: true})}
-                    style={{
-                        opacity: visible ? 0 : 1,
-                        visiblity: visible ? 'hidden' : '',
-                        height: visible ? 0 : 'auto',
-                    }}
+                    visible={visible}
                 />
                 <StateViewerContainer
                     indentation={indentation}
                     viewerWidth={viewerWidth}
-                    style={{
-                        opacity: visible ? 1 : 0,
-                        visibility: visible ? '' : 'hidden',
-                        height: visible ? 'auto' : 0,
-                    }}
+                    visible={visible}
                 >
                     <TimesIcon
                         name='times'
@@ -224,6 +218,9 @@ const ArrowIcon = styled(Icon)`
     border: 1px solid black;
     z-index: 2000;
     font-size: 18px;
+    opacity: ${props => props.visible ? 0 : 1};
+    visiblity: ${props => props.visible ? 'hidden' : ''};
+    height: ${props => props.visible ? 0 : 'auto'};
     -webkit-transition: opacity 0.5s;
     -moz-transition: opacity 0.5s;
     -ms-transition: opacity 0.5s;
@@ -249,7 +246,10 @@ const StateViewerContainer = styled.div`
     overflow: scroll;
     padding: 30px;
     z-index: 2000;
-    height: ${props => props.indentation === 0 ? 300 : 'auto'};
+    height: ${props => props.indentation === 0 ? '300px' : 'auto'};
+    opacity: ${props => props.visible ? 1 : 0};
+    visibility: ${props => props.visible ? '' : 'hidden'};
+    height: ${props => props.visible ? (props.indentation === 0 ? '300px' : 'auto') : 0};
     -webkit-transition: opacity 0.5s;
     -moz-transition: opacity 0.5s;
     -ms-transition: opacity 0.5s;
