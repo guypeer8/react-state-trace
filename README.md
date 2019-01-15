@@ -8,18 +8,28 @@
 ## Installation
 ```
 npm install --save react-state-trace
-npm install --save react@16.7.0-alpha.0 // hooks supported version
-npm install --save react-dom@16.7.0-alpha.0 // hooks supported version
 ```
 
 ## Usage
 ```js
 import React from 'react';
+import ReactDOM from 'react-dom';
 import store from './store';
 import StateViewer from 'react-state-trace';
 
 const App = () => (
-    <StateViewer store={store} />  
+    <div>
+        <StateViewer store={store} />  
+        <div>
+            <p>REACT STATE TRACE IS IN THE HOUSE</p>
+            <button>Like</button>
+        </div>
+    </div>
+);
+
+ReactDOM.render(
+    <App />,
+    document.getElementById('root')
 );
 ```
 

@@ -1,6 +1,6 @@
 {
   "name": "react-state-trace",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A state trace viewer for react apps",
   "main": "dist/index.js",
   "scripts": {
@@ -23,8 +23,8 @@
   "author": "Guy Peer",
   "license": "ISC",
   "dependencies": {
-    "react": "^16.7.0-alpha.0",
-    "react-dom": "^16.7.0-alpha.0",
+    "react": "^16.7.0",
+    "react-dom": "^16.7.0",
     "semantic-ui-react": "^0.84.0",
     "styled-components": "^4.1.3"
   },

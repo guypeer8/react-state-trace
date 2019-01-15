@@ -1,6 +1,6 @@
 import React from 'react';
 import { render} from 'react-dom';
-import StateTrace from '../../src';
+import StateTrace from '../../src/hooks';
 
 const demoState = {
     user: {

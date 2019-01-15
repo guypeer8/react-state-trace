@@ -1,172 +1,216 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button, Icon, Label, Header, Divider } from 'semantic-ui-react';
 import styled from 'styled-components';
 
-const StateViewer = ({ state, store, dev = true } = {}) => {
-    if (!dev)
-        return null;
+export default class StateViewer extends React.PureComponent {
+    constructor(props) {
+        super(props);
+        const appState = this.getAppState(props);
+        const fontSize = this.FONT_SIZE;
+        const indentation = this.INDENTATION;
 
-    state = state || (store ? (store.getState ? store.getState() : (store.state ? store.state : {})) : {});
-    const [stateJson, setStateJson] = useState(JSON.stringify({...state}, null, 2));
-    const [viewedState, setViewedState] = useState({...state});
-    const [viewerWidth, setViewerWidth] = useState(50);
-    const [visible, setVisibility] = useState(false);
-    const [fields, setFields] = useState([]);
+        this.state = {
+            appState,
+            stateJson: JSON.stringify({...appState}, null, indentation),
+            viewedState: {...appState},
+            viewerWidth: 50,
+            visible: false,
+            fields: [],
+            fontSize,
+            indentation,
+        };
 
-    const [__LS__FONT_SIZE, __LS__INDENTATION] = [
-        parseInt(localStorage.getItem('stateViewer.fontSize')),
-        parseInt(localStorage.getItem('stateViewer.indentation')),
-    ];
-    const [FONT_SIZE, INDENTATION] = [
-        !isNaN(__LS__FONT_SIZE) ? __LS__FONT_SIZE : 16,
-        !isNaN(__LS__INDENTATION) ? __LS__INDENTATION : 2,
-    ];
-    const [fontSize, setFontSize] = useState(FONT_SIZE);
-    const [indentation, setIndentation] = useState(INDENTATION);
+        this.changeViewedState = this.changeViewedState.bind(this);
+        this.setPrevViewedState = this.setPrevViewedState.bind(this);
+        this.changeStateJson = this.changeStateJson.bind(this);
+    }
 
-    const changeViewedState = () => {
-        let viewState = {...state};
-        fields.forEach(field =>
-            viewState = viewState[field]
+    getAppState({ store, state } = {}) {
+        if (state)
+            return state;
+
+        if (store) {
+            if (store.getState && (typeof store.getState === 'function'))
+                return store.getState();
+            if (store.state)
+                return store.state;
+        }
+
+        return {};
+    };
+
+    get FONT_SIZE() {
+        const __LS__FONT_SIZE = parseInt(localStorage.getItem('stateViewer.fontSize'));
+        return !isNaN(__LS__FONT_SIZE) ? __LS__FONT_SIZE : 16;
+    };
+
+    get INDENTATION() {
+        const __LS__INDENTATION = parseInt(localStorage.getItem('stateViewer.indentation'));
+        return !isNaN(__LS__INDENTATION) ? __LS__INDENTATION : 2;
+    };
+
+    changeViewedState() {
+        let viewedState = {...this.state.appState};
+        this.state.fields.forEach(field =>
+            viewedState = viewedState[field]
         );
-        setViewedState(viewState);
+        this.setState({ viewedState });
     };
 
-    const setPrevViewedState = () => {
+    setPrevViewedState() {
+        const { fields, appState } = this.state;
         if (fields.length > 0)
-            return setFields(fields.slice(0, fields.length - 1));
+            return this.setState({
+                fields: fields.slice(0, fields.length - 1),
+            });
 
-        setViewedState(state);
-        setFields([]);
+        this.setState({
+            viewedState: {...appState},
+            fields: [],
+        });
     };
 
-    const adjustStateJson = () => {
+    changeStateJson() {
+        const { viewedState, indentation } = this.state;
         const _stateJson = JSON.stringify(viewedState, null, indentation);
         const js = _stateJson.replace(/"\w+":/g, str => str.replace(/"/g, ''));
-        setStateJson(js);
+        this.setState({ stateJson: js });
     };
 
-    useEffect(() => localStorage.setItem('stateViewer.indentation', indentation), [indentation]);
-    useEffect(() => localStorage.setItem('stateViewer.fontSize', fontSize), [fontSize]);
-    useEffect(changeViewedState, [fields, state]);
-    useEffect(adjustStateJson, [viewedState, indentation]);
+    componentDidUpdate(prevProps, prevState, snapshot) {
+        if (this.props !== prevProps)
+            this.setState({ appState: this.getAppState(this.props) });
+        if (this.state.indentation !== prevState.indentation) {
+            localStorage.setItem('stateViewer.indentation', this.state.indentation);
+            this.changeViewedState();
+        }
+        if (this.state.fontSize !== prevState.fontSize)
+            localStorage.setItem('stateViewer.fontSize', this.state.fontSize);
+        if (this.state.fields !== prevState.fields || this.state.appState !== prevState.appState)
+            this.changeViewedState();
+        if (this.state.viewedState !== prevState.viewedState)
+            this.changeStateJson();
+    };
 
-    return (
-        <div>
-            <link rel='stylesheet' href='//cdn.jsdelivr.net/npm/semantic-ui@2.4.1/dist/semantic.min.css' />
-            <ArrowIcon
-                name='angle double left'
-                onClick={() => setVisibility(true)}
-                style={{
-                    opacity: visible ? 0 : 1,
+    render() {
+        if (this.props.dev === false)
+            return null;
+
+        const { visible, indentation, fontSize, viewerWidth, fields, stateJson } = this.state;
+        return (
+            <div>
+                <link rel='stylesheet' href='//cdn.jsdelivr.net/npm/semantic-ui@2.4.1/dist/semantic.min.css'/>
+                <ArrowIcon
+                    name='angle double left'
+                    onClick={() => this.setState({visible: true})}
+                    style={{
+                        opacity: visible ? 0 : 1,
                         visiblity: visible ? 'hidden' : '',
                         height: visible ? 0 : 'auto',
-                }}
-            />
-            <StateViewerContainer
-                indentation={indentation}
-                viewerWidth={viewerWidth}
-                style={{
-                    opacity: visible ? 1 : 0,
+                    }}
+                />
+                <StateViewerContainer
+                    indentation={indentation}
+                    viewerWidth={viewerWidth}
+                    style={{
+                        opacity: visible ? 1 : 0,
                         visibility: visible ? '' : 'hidden',
                         height: visible ? 'auto' : 0,
-                }}
-            >
-                <TimesIcon
-                    name='times'
-                    onClick={() => setVisibility(!visible)}
-                />
-                <Header as='h3' color='grey' style={{marginTop: 0}}>
-                    React State Trace
-                </Header>
-                <Divider fitted />
-                <div style={{marginBottom: 15}}>
-                    {fields.length > 0 &&
+                    }}
+                >
+                    <TimesIcon
+                        name='times'
+                        onClick={() => this.setState({visible: !visible})}
+                    />
+                    <Header as='h3' color='grey' style={{marginTop: 0}}>
+                        React State Trace
+                    </Header>
+                    <Divider fitted/>
+                    <div style={{marginBottom: 15}}>
+                        {fields.length > 0 &&
                         <Label
-                            as='a'
-                            color='teal'
-                            tag onClick={setPrevViewedState}
+                            as='a' color='teal' tag
+                            onClick={this.setPrevViewedState}
                         >
                             {fields[fields.length - 1]}
                         </Label>
-                    }
-                </div>
-                <div>
-                    {isObject(viewedState) &&
-                    Object.keys(viewedState).map(sub_field => (
-                        <StateNavigationButton
-                            size='tiny'
-                            key={sub_field}
-                            onClick={() => setFields([...fields, sub_field])}
-                            active={fields[fields.length - 1] === sub_field}
-                        >
-                                {sub_field}
-                        </StateNavigationButton>
-                    ))}
-                </div>
-                <WidthAdjuster>
-                    <span>Adjust width</span>
-                    <input
-                        type='range'
-                        min='40'
-                        max='100'
-                        step='2'
-                        value={viewerWidth}
-                        onChange={({ target: { value } }) =>
-                            setViewerWidth(value)
                         }
-                    />
-                </WidthAdjuster>
-                <BottomAdjusters>
-                    <Adjuster>
-                        <span>Adjust indentation</span>
-                        <Button
-                            onClick={() => setIndentation(indentation - 1)}
-                            disabled={indentation === 0}
-                        >
-                            <AdjusterIcon name='minus'/>
-                        </Button>
-                        <Button
-                            onClick={() => setIndentation(indentation + 1)}
-                        >
-                            <AdjusterIcon name='plus'/>
-                        </Button>
+                    </div>
+                    <div>
+                        {isObject(this.state.viewedState) &&
+                        Object.keys(this.state.viewedState).map(sub_field => (
+                            <StateNavigationButton
+                                size='tiny'
+                                key={sub_field}
+                                onClick={() => this.setState({fields: [...fields, sub_field]})}
+                                active={fields[fields.length - 1] === sub_field}
+                            >
+                                {sub_field}
+                            </StateNavigationButton>
+                        ))}
+                    </div>
+                    <WidthAdjuster>
+                        <span>Adjust width</span>
+                        <input
+                            type='range'
+                            min='40'
+                            max='100'
+                            step='2'
+                            value={viewerWidth}
+                            onChange={({target: {value}}) =>
+                                this.setState({viewerWidth: value})
+                            }
+                        />
+                    </WidthAdjuster>
+                    <BottomAdjusters>
+                        <Adjuster>
+                            <span>Adjust indentation</span>
                             <Button
-                            onClick={() => setIndentation(2)}
-                            disabled={indentation === 2}
-                        >
-                            <AdjusterIcon name='refresh'/>
-                        </Button>
-                    </Adjuster>
-                    <Adjuster>
-                        <span>Adjust font size</span>
-                        <Button
-                            onClick={() => setFontSize(fontSize - 1)}
-                        >
-                            <AdjusterIcon name='minus'/>
-                        </Button>
-                        <Button
-                            onClick={() => setFontSize(fontSize + 1)}
-                        >
-                            <AdjusterIcon name='plus'/>
-                        </Button>
-                        <Button
-                            onClick={() => setFontSize(16)}
-                            disabled={fontSize === 16}
-                        >
-                            <AdjusterIcon name='refresh'/>
-                        </Button>
-                    </Adjuster>
-                </BottomAdjusters>
-                <StateJson fontSize={fontSize}>
-                    {stateJson}
-                </StateJson>
-            </StateViewerContainer>
-        </div>
-    );
-};
-
-export default StateViewer;
+                                onClick={() => this.setState({indentation: indentation - 1})}
+                                disabled={indentation === 0}
+                            >
+                                <AdjusterIcon name='minus'/>
+                            </Button>
+                            <Button
+                                onClick={() => this.setState({indentation: indentation + 1})}
+                            >
+                                <AdjusterIcon name='plus'/>
+                            </Button>
+                            <Button
+                                onClick={() => this.setState({indentation: 2})}
+                                disabled={indentation === 2}
+                            >
+                                <AdjusterIcon name='refresh'/>
+                            </Button>
+                        </Adjuster>
+                        <Adjuster>
+                            <span>Adjust font size</span>
+                            <Button
+                                onClick={() => this.setState({fontSize: fontSize - 1})}
+                            >
+                                <AdjusterIcon name='minus'/>
+                            </Button>
+                            <Button
+                                onClick={() => this.setState({fontSize: fontSize + 1})}
+                            >
+                                <AdjusterIcon name='plus'/>
+                            </Button>
+                            <Button
+                                onClick={() => this.setState({fontSize: 16})}
+                                disabled={fontSize === 16}
+                            >
+                                <AdjusterIcon name='refresh'/>
+                            </Button>
+                        </Adjuster>
+                    </BottomAdjusters>
+                    <StateJson fontSize={fontSize}>
+                        {stateJson}
+                    </StateJson>
+                </StateViewerContainer>
+            </div>
+        );
+    }
+}
 
 const ArrowIcon = styled(Icon)`
     position: absolute;
@@ -214,7 +258,7 @@ const StateViewerContainer = styled.div`
 `;
 
 const StateNavigationButton = styled(Button)`
-    background: ${props => props.active ? 'green !important' : ''};
+    background: ${props => props.active ? '#00b5ad !important' : ''};
     color: ${props => props.disabled ? 'white !important' : ''};
     margin-bottom: 10px !important;
 `;
