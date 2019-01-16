@@ -255,6 +255,7 @@ const StateViewerContainer = styled.div`
     -ms-transition: opacity 0.5s;
     -o-transition: opacity 0.5s;
     transition: opacity 0.5s;
+    max-height: 100%;
 `;
 
 const StateNavigationButton = styled(Button)`
@@ -277,7 +278,8 @@ const WidthAdjuster = styled.div`
 `;
 
 const BottomAdjusters = styled.div`
-    position: absolute;
+    padding: 5px;
+    position: fixed;
     bottom: 0;
     right: 0;
 `;
@@ -287,7 +289,7 @@ const Adjuster = styled.div`
     justify-content: space-between;
     margin-bottom: 10px;
     > button {
-        padding: 6px !important;
+        padding: 3px !important;
     }
     > span {
         margin-right: 10px;
