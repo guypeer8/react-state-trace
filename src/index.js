@@ -8,6 +8,7 @@ export default class StateViewer extends React.PureComponent {
         const appState = this.getAppState(props);
         const fontSize = this.FONT_SIZE;
         const indentation = this.INDENTATION;
+        const showAdjusters = this.SHOW_ADJUSTERS;
 
         this.state = {
             appState,
@@ -18,6 +19,7 @@ export default class StateViewer extends React.PureComponent {
             fields: [],
             fontSize,
             indentation,
+            showAdjusters,
         };
 
         this.changeViewedState = this.changeViewedState.bind(this);
@@ -49,6 +51,11 @@ export default class StateViewer extends React.PureComponent {
         return !isNaN(__LS__INDENTATION) ? __LS__INDENTATION : 2;
     };
 
+    get SHOW_ADJUSTERS() {
+        const __LS__SHOW_ADJUSTERS = localStorage.getItem('stateViewer.showAdjusters');
+        return __LS__SHOW_ADJUSTERS !== 'false';
+    };
+
     changeViewedState() {
         let viewedState = {...this.state.appState};
         this.state.fields.forEach(field =>
@@ -59,10 +66,11 @@ export default class StateViewer extends React.PureComponent {
 
     setPrevViewedState() {
         const { fields, appState } = this.state;
-        if (fields.length > 0)
+        if (fields.length > 0) {
             return this.setState({
                 fields: fields.slice(0, fields.length - 1),
             });
+        }
 
         this.setState({
             viewedState: {...appState},
@@ -81,8 +89,10 @@ export default class StateViewer extends React.PureComponent {
         if (this.props !== prevProps)
             this.setState({ appState: this.getAppState(this.props) });
 
-        if (this.state.indentation !== prevState.indentation)
+        if (this.state.indentation !== prevState.indentation) {
             localStorage.setItem('stateViewer.indentation', this.state.indentation);
+            this.changeStateJson();
+        }
 
         if (this.state.fontSize !== prevState.fontSize)
             localStorage.setItem('stateViewer.fontSize', this.state.fontSize);
@@ -92,13 +102,16 @@ export default class StateViewer extends React.PureComponent {
 
         if (this.state.viewedState !== prevState.viewedState)
             this.changeStateJson();
+
+        if (this.state.showAdjusters !== prevState.showAdjusters)
+            localStorage.setItem('stateViewer.showAdjusters', this.state.showAdjusters);
     };
 
     render() {
         if (this.props.dev === false)
             return null;
 
-        const { visible, indentation, fontSize, viewerWidth, fields, stateJson } = this.state;
+        const { visible, indentation, fontSize, viewerWidth, fields, stateJson, showAdjusters } = this.state;
         return (
             <div>
                 <link rel='stylesheet' href='//cdn.jsdelivr.net/npm/semantic-ui@2.4.1/dist/semantic.min.css'/>
@@ -116,10 +129,82 @@ export default class StateViewer extends React.PureComponent {
                         name='times'
                         onClick={() => this.setState({visible: !visible})}
                     />
-                    <Header as='h3' color='grey' style={{marginTop: 0}}>
-                        React State Trace
-                    </Header>
+                    <Title
+                        as='h3'
+                        color='grey'
+                        showAdjusters={showAdjusters}
+                    >
+                        <span>React State Trace</span>
+                        <DownArrowIcon
+                            name='angle double down'
+                            onClick={() => this.setState({showAdjusters: true})}
+                        />
+                    </Title>
                     <Divider fitted/>
+                    <Adjusters showAdjusters={showAdjusters}>
+                        <UpArrowIcon
+                            name='angle double up'
+                            onClick={() => this.setState({showAdjusters: false})}
+                        />
+                        <Adjuster>
+                            <span>Adjust width</span>
+                            <input
+                                type='range'
+                                min='40'
+                                max='100'
+                                step='2'
+                                value={viewerWidth}
+                                onChange={({target: {value}}) =>
+                                    this.setState({viewerWidth: value})
+                                }
+                            />
+                        </Adjuster>
+                        <Divider/>
+                        <Adjuster>
+                            <span>Adjust indentation</span>
+                            <div>
+                                <Button
+                                    onClick={() => this.setState({indentation: indentation - 1})}
+                                    disabled={indentation === 0}
+                                >
+                                    <AdjusterIcon name='minus'/>
+                                </Button>
+                                <Button
+                                    onClick={() => this.setState({indentation: indentation + 1})}
+                                >
+                                    <AdjusterIcon name='plus'/>
+                                </Button>
+                                <Button
+                                    onClick={() => this.setState({indentation: 2})}
+                                    disabled={indentation === 2}
+                                >
+                                    <AdjusterIcon name='refresh'/>
+                                </Button>
+                            </div>
+                        </Adjuster>
+                        <Divider/>
+                        <Adjuster>
+                            <span>Adjust font size</span>
+                            <div>
+                                <Button
+                                    onClick={() => this.setState({fontSize: fontSize - 1})}
+                                >
+                                    <AdjusterIcon name='minus'/>
+                                </Button>
+                                <Button
+                                    onClick={() => this.setState({fontSize: fontSize + 1})}
+                                >
+                                    <AdjusterIcon name='plus'/>
+                                </Button>
+                                <Button
+                                    onClick={() => this.setState({fontSize: 16})}
+                                    disabled={fontSize === 16}
+                                >
+                                    <AdjusterIcon name='refresh'/>
+                                </Button>
+                            </div>
+                        </Adjuster>
+                    </Adjusters>
                     <div style={{marginBottom: 15}}>
                         {fields.length > 0 &&
                         <Label
@@ -143,60 +228,6 @@ export default class StateViewer extends React.PureComponent {
                             </StateNavigationButton>
                         ))}
                     </div>
-                    <WidthAdjuster>
-                        <span>Adjust width</span>
-                        <input
-                            type='range'
-                            min='40'
-                            max='100'
-                            step='2'
-                            value={viewerWidth}
-                            onChange={({target: {value}}) =>
-                                this.setState({viewerWidth: value})
-                            }
-                        />
-                    </WidthAdjuster>
-                    <BottomAdjusters>
-                        <Adjuster>
-                            <span>Adjust indentation</span>
-                            <Button
-                                onClick={() => this.setState({indentation: indentation - 1})}
-                                disabled={indentation === 0}
-                            >
-                                <AdjusterIcon name='minus'/>
-                            </Button>
-                            <Button
-                                onClick={() => this.setState({indentation: indentation + 1})}
-                            >
-                                <AdjusterIcon name='plus'/>
-                            </Button>
-                            <Button
-                                onClick={() => this.setState({indentation: 2})}
-                                disabled={indentation === 2}
-                            >
-                                <AdjusterIcon name='refresh'/>
-                            </Button>
-                        </Adjuster>
-                        <Adjuster>
-                            <span>Adjust font size</span>
-                            <Button
-                                onClick={() => this.setState({fontSize: fontSize - 1})}
-                            >
-                                <AdjusterIcon name='minus'/>
-                            </Button>
-                            <Button
-                                onClick={() => this.setState({fontSize: fontSize + 1})}
-                            >
-                                <AdjusterIcon name='plus'/>
-                            </Button>
-                            <Button
-                                onClick={() => this.setState({fontSize: 16})}
-                                disabled={fontSize === 16}
-                            >
-                                <AdjusterIcon name='refresh'/>
-                            </Button>
-                        </Adjuster>
-                    </BottomAdjusters>
                     <StateJson fontSize={fontSize}>
                         {stateJson}
                     </StateJson>
@@ -236,6 +267,38 @@ const TimesIcon = styled(Icon)`
     font-size: 18px;
 `;
 
+const UpArrowIcon = styled(Icon)`
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    cursor: pointer;
+    &:hover {
+        opacity: 0.88;
+    }
+`;
+const DownArrowIcon = styled(Icon)`
+    cursor: pointer;
+    font-size: 18px;
+    -webkit-transition: opacity 0.3s;
+    -moz-transition: opacity 0.3s;
+    -ms-transition: opacity 0.3s;
+    -o-transition: opacity 0.3s;
+    transition: opacity 0.3s;
+`;
+
+const Title = styled(Header)`
+    margin-top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    > i.icon {
+        opacity: ${props => props.showAdjusters ? 0 : 1};
+        &:hover {
+            opacity: ${props => props.showAdjusters ? 0 : 0.88};
+        }
+    }
+`;
+
 const StateViewerContainer = styled.div`
     position: absolute;
     top: 0;
@@ -264,31 +327,31 @@ const StateNavigationButton = styled(Button)`
     margin-bottom: 10px !important;
 `;
 
-const WidthAdjuster = styled.div`
-    margin-top: 20px;
-    display: flex;
-    align-items: flex-center;
-    justify-content: space-between;
-    > span {
-        margin-right: 10px;
-    }
-    > input {
-        width: 84%;
-    }
-`;
-
-const BottomAdjusters = styled.div`
-    padding: 5px;
-    position: fixed;
-    bottom: 0;
-    right: 0;
+const Adjusters = styled.div`
+    border: 1px solid #333232;
+    border-radius: 10px;
+    margin-top: 10px;
+    position: relative;
+    -webkit-transition: opacity 0.3s;
+    -moz-transition: opacity 0.3s;
+    -ms-transition: opacity 0.3s;
+    -o-transition: opacity 0.3s;
+    transition: opacity 0.3s;
+    opacity: ${props => props.showAdjusters ? 1 : 0};
+    height: ${props => props.showAdjusters ? 'auto' : 0};
+    z-index: ${props => props.showAdjusters ? 1 : -10};
+    padding: ${props => props.showAdjusters ? '25px 10px 10px 10px' : 0};
+    margin-bottom: ${props => props.showAdjusters ? '10px' : 0};
 `;
 
 const Adjuster = styled.div`
     display: flex;
     justify-content: space-between;
     margin-bottom: 10px;
-    > button {
+   > input[type="range"] {
+        width: 68%;
+    }
+    > div > button {
         padding: 3px !important;
     }
     > span {
