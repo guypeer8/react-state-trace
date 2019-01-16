@@ -86,13 +86,15 @@ export default class StateViewer extends React.PureComponent {
     };
 
     componentDidUpdate(prevProps, prevState, snapshot) {
-        if (this.props !== prevProps) {
-            this.setState({appState: this.getAppState(this.props)});
+        if (this.props !== prevProps)
+            this.setState({ appState: this.getAppState(this.props) });
+
+        if (this.state.appState !== prevState.appState)
             this.changeViewedState();
-        }
 
         if (this.state.indentation !== prevState.indentation) {
             localStorage.setItem('stateViewer.indentation', this.state.indentation);
+            this.changeViewedState();
         }
 
         if (this.state.fontSize !== prevState.fontSize)
