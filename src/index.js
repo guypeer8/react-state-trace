@@ -121,12 +121,20 @@ export default class StateViewer extends React.PureComponent {
                 <ArrowIcon
                     name='angle double left'
                     onClick={() => this.setState({visible: true})}
-                    visible={visible}
+                    style={{
+                        opacity: visible ? 0 : 1,
+                        visiblity: visible ? 'hidden' : '',
+                        height: visible ? 0 : 'auto',
+                    }}
                 />
                 <StateViewerContainer
                     indentation={indentation}
                     viewerWidth={viewerWidth}
-                    visible={visible}
+                    style={{
+                        opacity: visible ? 1 : 0,
+                        visibility: visible ? '' : 'hidden',
+                        height: visible ? (indentation === 0 ? '300px' : 'auto') : 0,
+                    }}
                 >
                     <TimesIcon
                         name='times'
@@ -252,9 +260,6 @@ const ArrowIcon = styled(Icon)`
     border: 1px solid black;
     z-index: 2000;
     font-size: 18px;
-    opacity: ${props => props.visible ? 0 : 1};
-    visiblity: ${props => props.visible ? 'hidden' : ''};
-    height: ${props => props.visible ? 0 : 'auto'};
     -webkit-transition: opacity 0.5s;
     -moz-transition: opacity 0.5s;
     -ms-transition: opacity 0.5s;
@@ -312,10 +317,6 @@ const StateViewerContainer = styled.div`
     overflow: scroll;
     padding: 30px;
     z-index: 2000;
-    height: ${props => props.indentation === 0 ? '300px' : 'auto'};
-    opacity: ${props => props.visible ? 1 : 0};
-    visibility: ${props => props.visible ? '' : 'hidden'};
-    height: ${props => props.visible ? (props.indentation === 0 ? '300px' : 'auto') : 0};
     -webkit-transition: opacity 0.5s;
     -moz-transition: opacity 0.5s;
     -ms-transition: opacity 0.5s;

@@ -1,6 +1,6 @@
 {
   "name": "react-state-trace",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "A state trace viewer for react apps",
   "main": "dist/index.js",
   "scripts": {
@@ -22,6 +22,10 @@
   ],
   "author": "Guy Peer",
   "license": "ISC",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/guypeer8/react-state-trace"
+  },
   "dependencies": {
     "react": "^16.7.0",
     "react-dom": "^16.7.0",
