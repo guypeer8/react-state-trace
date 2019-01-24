@@ -10,6 +10,7 @@ const StateViewer = ({ state, store, dev = true } = {}) => {
     const [stateJson, setStateJson] = useState(JSON.stringify({...state}, null, 2));
     const [viewedState, setViewedState] = useState({...state});
     const [viewerWidth, setViewerWidth] = useState(50);
+    const [showViewer, toggleViewer] = useState(true);
     const [visible, setVisibility] = useState(false);
     const [fields, setFields] = useState([]);
 
@@ -46,10 +47,28 @@ const StateViewer = ({ state, store, dev = true } = {}) => {
         setStateJson(js);
     };
 
+    const onKeyDown = (e) => {
+        const SHIFT_KEY = e.shiftKey;
+        const S_KEY = e.which === 83 || e.keyCode === 83;
+
+        if (SHIFT_KEY && S_KEY)
+            toggleViewer(!showViewer);
+    };
+
     useEffect(() => localStorage.setItem('stateViewer.indentation', indentation), [indentation]);
     useEffect(() => localStorage.setItem('stateViewer.fontSize', fontSize), [fontSize]);
     useEffect(changeViewedState, [fields, state]);
     useEffect(adjustStateJson, [viewedState, indentation]);
+
+    useEffect(() => {
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    });
+
+    if (!showViewer)
+        return null;
 
     return (
         <div>
@@ -59,7 +78,7 @@ const StateViewer = ({ state, store, dev = true } = {}) => {
                 onClick={() => setVisibility(true)}
                 style={{
                     opacity: visible ? 0 : 1,
-                        visiblity: visible ? 'hidden' : '',
+                        visibility: visible ? 'hidden' : '',
                         height: visible ? 0 : 'auto',
                 }}
             />

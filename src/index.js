@@ -14,6 +14,7 @@ export default class StateViewer extends React.PureComponent {
             appState,
             stateJson: JSON.stringify({...appState}, null, indentation),
             viewedState: {...appState},
+            showViewer: true,
             viewerWidth: 50,
             visible: false,
             fields: [],
@@ -25,6 +26,7 @@ export default class StateViewer extends React.PureComponent {
         this.changeViewedState = this.changeViewedState.bind(this);
         this.setPrevViewedState = this.setPrevViewedState.bind(this);
         this.changeStateJson = this.changeStateJson.bind(this);
+        this.onKeyDown = this.onKeyDown.bind(this);
     }
 
     getAppState({ store, state } = {}) {
@@ -78,12 +80,24 @@ export default class StateViewer extends React.PureComponent {
         });
     };
 
+    onKeyDown(e) {
+        const SHIFT_KEY = e.shiftKey;
+        const S_KEY = e.which === 83 || e.keyCode === 83;
+
+        if (SHIFT_KEY && S_KEY)
+            this.setState({ showViewer: !this.state.showViewer });
+    };
+
     changeStateJson() {
         const { viewedState, indentation } = this.state;
         const _stateJson = JSON.stringify(viewedState, null, indentation);
         const js = _stateJson.replace(/"\w+":/g, str => str.replace(/"/g, ''));
         this.setState({ stateJson: js });
     };
+
+    componentDidMount() {
+        document.addEventListener('keydown', this.onKeyDown);
+    }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
         if (this.props !== prevProps)
@@ -111,7 +125,7 @@ export default class StateViewer extends React.PureComponent {
     };
 
     render() {
-        if (this.props.dev === false)
+        if (this.props.dev === false || !this.state.showViewer)
             return null;
 
         const { visible, indentation, fontSize, viewerWidth, fields, stateJson, showAdjusters } = this.state;
@@ -123,7 +137,7 @@ export default class StateViewer extends React.PureComponent {
                     onClick={() => this.setState({visible: true})}
                     style={{
                         opacity: visible ? 0 : 1,
-                        visiblity: visible ? 'hidden' : '',
+                        visibility: visible ? 'hidden' : '',
                         height: visible ? 0 : 'auto',
                     }}
                 />

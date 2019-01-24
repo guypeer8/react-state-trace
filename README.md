@@ -11,6 +11,7 @@ npm install --save react-state-trace
 ```
 
 ## Usage
+ - Press `shift + s` to show or hide the devtool
 ```js
 import React from 'react';
 import ReactDOM from 'react-dom';
