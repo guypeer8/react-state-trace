@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Button, Icon, Label, Header, Divider } from 'semantic-ui-react';
+import { Button, Icon, Label, Header, Divider, Input, Popup } from 'semantic-ui-react';
 
 export default class StateViewer extends React.PureComponent {
     constructor(props) {
@@ -18,6 +18,7 @@ export default class StateViewer extends React.PureComponent {
             viewerWidth: 50,
             visible: false,
             fields: [],
+            arrayIndex: '',
             fontSize,
             indentation,
             showAdjusters,
@@ -26,6 +27,7 @@ export default class StateViewer extends React.PureComponent {
         this.changeViewedState = this.changeViewedState.bind(this);
         this.setPrevViewedState = this.setPrevViewedState.bind(this);
         this.changeStateJson = this.changeStateJson.bind(this);
+        this.onChangeIndex = this.onChangeIndex.bind(this);
         this.onKeyDown = this.onKeyDown.bind(this);
     }
 
@@ -93,6 +95,33 @@ export default class StateViewer extends React.PureComponent {
             this.setState({ showViewer: !this.state.showViewer });
     };
 
+    onChangeIndex(key) {
+        let { arrayIndex } = this.state;
+
+        if (
+            isNaN(parseInt(arrayIndex, 10))
+            || !['Enter', 'Escape'].includes(key)
+        ) return;
+
+        if (key === 'Escape')
+            return this.setState({ arrayIndex: '' });
+
+        if (key === 'Enter') {
+            const { fields, viewedState } = this.state;
+
+            if (arrayIndex > viewedState.length - 1)
+                arrayIndex = 0;
+
+            return this.setState({
+                fields: [
+                    ...fields,
+                    { index: arrayIndex },
+                ],
+                arrayIndex: '',
+            });
+        }
+    };
+
     changeStateJson() {
         const { viewedState, indentation } = this.state;
         const _stateJson = JSON.stringify(viewedState, null, indentation);
@@ -140,6 +169,7 @@ export default class StateViewer extends React.PureComponent {
             viewerWidth,
             viewedState,
             fields,
+            arrayIndex,
             stateJson,
             showAdjusters,
         } = this.state;
@@ -252,19 +282,27 @@ export default class StateViewer extends React.PureComponent {
                                     Choose a specific index to show: {' '}
                                     <strong>(0 - {viewedState.length - 1})</strong>
                                 </span>
-                                <input
-                                    type='number'
-                                    min='0'
-                                    max={viewedState.length - 1}
-                                    onChange={({ target: { value } }) => {
-                                        if (value > viewedState.length - 1)
-                                            value = 0;
-
-                                        this.setState({
-                                            fields: [...fields, {index: value}],
-                                        });
-                                    }}
-                                    style={{marginLeft: 10}}
+                                <Popup
+                                    trigger={
+                                        <Input
+                                            size='mini'
+                                            type='number'
+                                            min='0'
+                                            max={viewedState.length - 1}
+                                            value={arrayIndex}
+                                            onChange={({ target: { value } }) => {
+                                                if (!isNaN(parseInt(value, 10)) || value === '')
+                                                    this.setState({ arrayIndex: value })
+                                            }}
+                                            onKeyDown={({ key }) => this.onChangeIndex(key)}
+                                            style={{marginLeft: 10, width: 80}}
+                                        />
+                                    }
+                                    content='Type item index & press Enter / Escape'
+                                    position='bottom center'
+                                    size='tiny'
+                                    inverted
+                                    style={{zIndex: 100000}}
                                 />
                             </div>
                         </div>
@@ -437,15 +475,18 @@ function isObject(param) {
 
 function createBreadcrumbs(fields) {
     let breadcrumbs = '';
+
     fields.forEach(field => {
         if (typeof field === 'string')
             return (breadcrumbs += `${field} / `);
+
         if (isObject(field)) {
             const lastSlash = breadcrumbs.lastIndexOf(' / ');
             const bc = breadcrumbs.slice(0, lastSlash);
             breadcrumbs = `${bc} [${field.index}] / `;
         }
     });
+
     const lastSlash = breadcrumbs.lastIndexOf(' / ');
     return breadcrumbs.slice(0, lastSlash);
 }
