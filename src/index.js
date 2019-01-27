@@ -17,7 +17,6 @@ export default class StateViewer extends React.PureComponent {
             showViewer: true,
             viewerWidth: 50,
             visible: false,
-            arrayIndex: '',
             fields: [],
             fontSize,
             indentation,
@@ -60,22 +59,16 @@ export default class StateViewer extends React.PureComponent {
     };
 
     changeViewedState() {
-        const { appState, fields, arrayIndex } = this.state;
+        const { appState, fields } = this.state;
         let viewedState = {...appState};
-        fields.forEach(field =>
-            viewedState = viewedState[field]
-        );
+        fields.forEach(field => {
+            if (isObject(field))
+                return viewedState = viewedState[field.index];
 
-        const state = {};
-        if (Array.isArray(viewedState)) {
-            if (arrayIndex !== '')
-                viewedState = viewedState[arrayIndex];
-        }
-        else
-            state.arrayIndex = '';
+            viewedState = viewedState[field];
+        });
 
-        state.viewedState = viewedState;
-        this.setState(state);
+        this.setState({viewedState});
     };
 
     setPrevViewedState() {
@@ -129,9 +122,6 @@ export default class StateViewer extends React.PureComponent {
         if (this.state.fields !== prevState.fields)
             this.changeViewedState();
 
-        if (this.state.arrayIndex !== prevState.arrayIndex)
-            this.changeViewedState();
-
         if (this.state.viewedState !== prevState.viewedState)
             this.changeStateJson();
 
@@ -149,7 +139,6 @@ export default class StateViewer extends React.PureComponent {
             fontSize,
             viewerWidth,
             viewedState,
-            arrayIndex,
             fields,
             stateJson,
             showAdjusters,
@@ -267,12 +256,13 @@ export default class StateViewer extends React.PureComponent {
                                     type='number'
                                     min='0'
                                     max={viewedState.length - 1}
-                                    value={arrayIndex}
                                     onChange={({ target: { value } }) => {
                                         if (value > viewedState.length - 1)
                                             value = 0;
 
-                                        this.setState({arrayIndex: value})
+                                        this.setState({
+                                            fields: [...fields, {index: value}],
+                                        });
                                     }}
                                     style={{marginLeft: 10}}
                                 />
@@ -285,11 +275,14 @@ export default class StateViewer extends React.PureComponent {
                             as='a' color='teal' tag
                             onClick={this.setPrevViewedState}
                         >
-                            {fields[fields.length - 1]}
+                            {isObject(fields[fields.length - 1])
+                                ? (fields[fields.length - 2] + ' [' + fields[fields.length - 1].index + ']')
+                                : fields[fields.length - 1]
+                            }
                         </Label>
                         }
                     </div>
-                    <div style={{display: arrayIndex === '' ? '' : 'none'}}>
+                    <div>
                         {isObject(viewedState) &&
                         Object.keys(viewedState).map(sub_field => (
                             <StateNavigationButton
