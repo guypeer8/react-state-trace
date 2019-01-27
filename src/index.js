@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button, Icon, Label, Header, Divider } from 'semantic-ui-react';
 import styled from 'styled-components';
+import { Button, Icon, Label, Header, Divider } from 'semantic-ui-react';
 
 export default class StateViewer extends React.PureComponent {
     constructor(props) {
@@ -274,11 +274,7 @@ export default class StateViewer extends React.PureComponent {
                         <Label
                             as='a' color='teal' tag
                             onClick={this.setPrevViewedState}
-                        >
-                            {isObject(fields[fields.length - 1])
-                                ? (fields[fields.length - 2] + ' [' + fields[fields.length - 1].index + ']')
-                                : fields[fields.length - 1]
-                            }
+                        >{createBreadcrumbs(fields)}
                         </Label>
                         }
                     </div>
@@ -437,4 +433,19 @@ function isObject(param) {
     ) return false;
 
     return param.constructor.name === 'Object';
+}
+
+function createBreadcrumbs(fields) {
+    let breadcrumbs = '';
+    fields.forEach(field => {
+        if (typeof field === 'string')
+            return (breadcrumbs += `${field} / `);
+        if (isObject(field)) {
+            const lastSlash = breadcrumbs.lastIndexOf(' / ');
+            const bc = breadcrumbs.slice(0, lastSlash);
+            breadcrumbs = `${bc} [${field.index}] / `;
+        }
+    });
+    const lastSlash = breadcrumbs.lastIndexOf(' / ');
+    return breadcrumbs.slice(0, lastSlash);
 }
