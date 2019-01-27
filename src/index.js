@@ -17,6 +17,7 @@ export default class StateViewer extends React.PureComponent {
             showViewer: true,
             viewerWidth: 50,
             visible: false,
+            arrayIndex: '',
             fields: [],
             fontSize,
             indentation,
@@ -59,11 +60,22 @@ export default class StateViewer extends React.PureComponent {
     };
 
     changeViewedState() {
-        let viewedState = {...this.state.appState};
-        this.state.fields.forEach(field =>
+        const { appState, fields, arrayIndex } = this.state;
+        let viewedState = {...appState};
+        fields.forEach(field =>
             viewedState = viewedState[field]
         );
-        this.setState({ viewedState });
+
+        const state = {};
+        if (Array.isArray(viewedState)) {
+            if (arrayIndex !== '')
+                viewedState = viewedState[arrayIndex];
+        }
+        else
+            state.arrayIndex = '';
+
+        state.viewedState = viewedState;
+        this.setState(state);
     };
 
     setPrevViewedState() {
@@ -117,6 +129,9 @@ export default class StateViewer extends React.PureComponent {
         if (this.state.fields !== prevState.fields)
             this.changeViewedState();
 
+        if (this.state.arrayIndex !== prevState.arrayIndex)
+            this.changeViewedState();
+
         if (this.state.viewedState !== prevState.viewedState)
             this.changeStateJson();
 
@@ -128,7 +143,18 @@ export default class StateViewer extends React.PureComponent {
         if (this.props.dev === false || !this.state.showViewer)
             return null;
 
-        const { visible, indentation, fontSize, viewerWidth, fields, stateJson, showAdjusters } = this.state;
+        const {
+            visible,
+            indentation,
+            fontSize,
+            viewerWidth,
+            viewedState,
+            arrayIndex,
+            fields,
+            stateJson,
+            showAdjusters,
+        } = this.state;
+
         return (
             <div>
                 <link rel='stylesheet' href='//cdn.jsdelivr.net/npm/semantic-ui@2.4.1/dist/semantic.min.css'/>
@@ -230,6 +256,29 @@ export default class StateViewer extends React.PureComponent {
                             </div>
                         </Adjuster>
                     </Adjusters>
+                    {Array.isArray(viewedState) && viewedState.length > 0 && (
+                        <div>
+                            <div style={{marginBottom: 10}}>
+                                <span>
+                                    Choose a specific index to show: {' '}
+                                    <strong>(0 - {viewedState.length - 1})</strong>
+                                </span>
+                                <input
+                                    type='number'
+                                    min='0'
+                                    max={viewedState.length - 1}
+                                    value={arrayIndex}
+                                    onChange={({ target: { value } }) => {
+                                        if (value > viewedState.length - 1)
+                                            value = 0;
+
+                                        this.setState({arrayIndex: value})
+                                    }}
+                                    style={{marginLeft: 10}}
+                                />
+                            </div>
+                        </div>
+                    )}
                     <div style={{marginBottom: 15}}>
                         {fields.length > 0 &&
                         <Label
@@ -240,9 +289,9 @@ export default class StateViewer extends React.PureComponent {
                         </Label>
                         }
                     </div>
-                    <div>
-                        {isObject(this.state.viewedState) &&
-                        Object.keys(this.state.viewedState).map(sub_field => (
+                    <div style={{display: arrayIndex === '' ? '' : 'none'}}>
+                        {isObject(viewedState) &&
+                        Object.keys(viewedState).map(sub_field => (
                             <StateNavigationButton
                                 size='tiny'
                                 key={sub_field}
@@ -253,9 +302,7 @@ export default class StateViewer extends React.PureComponent {
                             </StateNavigationButton>
                         ))}
                     </div>
-                    <StateJson fontSize={fontSize}>
-                        {stateJson}
-                    </StateJson>
+                    <StateJson fontSize={fontSize}>{stateJson}</StateJson>
                 </StateViewerContainer>
             </div>
         );
